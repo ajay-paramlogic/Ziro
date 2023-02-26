@@ -1,5 +1,5 @@
 ```
-npx pwa-asset-generator circle-icon.png --background "rgb(255 228 230)" --xhtml public/pwa-assets
+npx pwa-asset-generator circle-icon.png --background "rgb(255 241 242)" --xhtml public/pwa-assets
 ```
 
 

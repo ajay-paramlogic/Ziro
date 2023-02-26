@@ -82,7 +82,7 @@ module.exports = {
       2,
       { anonymous: 'never', asyncArrow: 'always', named: 'never' },
     ],
-    'typescript-sort-keys/interface': 2,
+    'typescript-sort-keys/interface': 0,
     'typescript-sort-keys/string-enum': 2,
   },
   settings: {
