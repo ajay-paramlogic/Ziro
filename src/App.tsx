@@ -166,6 +166,10 @@ function Header({
   );
 }
 
+function isValidDate(d: any) {
+  return d instanceof Date && !isNaN(d);
+}
+
 export default function App() {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [single, setSingle] = useState<NewsItem | null>(null);
@@ -245,7 +249,8 @@ export default function App() {
                     {shorten(item.title, 89)}
                   </div>
                   <div className="text-sm" key={item.link}>
-                    {format(item.pubDate, 'dd MMM yyyy')}
+                    {isValidDate(item.pubDate) &&
+                      format(item.pubDate, 'dd MMM yyyy')}
                   </div>
                 </div>
                 <div className="h-full w-1/4 flex-1">
