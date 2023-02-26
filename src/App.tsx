@@ -5,7 +5,24 @@ const Link = (props: JSX.IntrinsicElements['a']) => (
   />
 );
 
+export function getEncodedURL(url: string) {
+  return window.btoa(url);
+}
+
 export default function App() {
+  const SCRAPER_URL = 'https://eish8o.43ci.workers.dev/?url=';
+  const base64Param = window.btoa(
+    // 'https://marathi.abplive.com/latest-news/feed',
+    'https://lokmat.news18.com/rss/editorial-opinion.xml',
+  );
+  const fetchSomeData = () => {
+    fetch(SCRAPER_URL + base64Param)
+      .then((res) => res.text())
+      .then((data) => {
+        console.log(data);
+      });
+  };
+
   return (
     <div className="mx-auto my-8 mt-10 w-8/12 rounded border border-gray-200 p-4 shadow-md dark:border-neutral-600 dark:bg-neutral-800 dark:shadow-none">
       <h1 className="mb-4 text-4xl">Welcome</h1>
@@ -25,6 +42,7 @@ export default function App() {
         </code>{' '}
         for live updates.
       </p>
+      <button onClick={fetchSomeData}>Fetch Some data</button>
     </div>
   );
 }
