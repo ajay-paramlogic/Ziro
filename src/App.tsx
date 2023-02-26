@@ -228,7 +228,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-neutral-50">
+    <div className="h-screen w-screen">
       <Header isSingle={Boolean(single)} setSingle={setSingle} />
       <div className="">
         {newsItems.map((item) => {
