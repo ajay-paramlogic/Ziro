@@ -74,7 +74,7 @@ const parseHTML = (
   return newsItems;
 };
 
-const SCRAPER_URL = 'http://smemo-remix-pwa.fly.dev/api/v1/get-page?url=';
+const SCRAPER_URL = 'https://smemo-remix-pwa.fly.dev/api/v1/get-page?url=';
 const fetcher = (url: string) =>
   fetch(SCRAPER_URL + window.btoa(url)).then((res) => res.text());
 
