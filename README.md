@@ -2,6 +2,14 @@
 npx pwa-asset-generator circle-icon.png --background "rgb(255 241 242)" --xhtml public/pwa-assets
 ```
 
+- Static header
+- Status bar color management | https://dev.to/akshaykumar6/progressive-web-apps-configure-status-bar-16fa
+- SafeArea
+- Update popup
+- Push notifications (Later)
+- PouchDB | Server Sync
+- Camera, Geolocation, Filesystem
+
 
 ### Links
 https://react-spectrum.adobe.com/react-spectrum/getting-started.html
