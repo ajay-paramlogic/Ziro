@@ -1,269 +1,132 @@
-import { parse } from 'date-fns';
-import format from 'date-fns/format';
-import { motion } from 'framer-motion';
-import { useCallback, useEffect, useState } from 'react';
+import { db } from './firebase-init';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+} from 'firebase/firestore';
 
-export function getEncodedURL(url: string) {
-  return window.btoa(url);
-}
+const queryClient = new QueryClient();
 
-type NewsItem = {
-  title: string;
-  link: string;
-  pubDate: Date;
-  thumbnail: string;
-  name: string;
-};
-
-const getXMLDoc = (data: string) => {
-  const parser = new DOMParser();
-  return parser.parseFromString(
-    data.replaceAll('<![CDATA[', '').replaceAll(']]>', ''),
-    'text/xml',
-  );
-};
-
-// const parseHTML = (data: string) => {
-//   const xmlDoc = getXMLDoc(data);
-//   const items = xmlDoc.getElementsByTagName('item');
-//   let newsItems: NewsItem[] = [];
-//   for (const item of items) {
-//     const title = item.getElementsByTagName('title')[0].textContent as string;
-//     const link = item.getElementsByTagName('link')[0].textContent as string;
-//     const pubDateRaw = item.getElementsByTagName('pubDate')[0]
-//       .textContent as string;
-//     const pubDate = parse(
-//       pubDateRaw,
-//       'EEE, dd MMM yyyy HH:mm:ss X',
-//       new Date(),
-//     );
-//     const thumbnail = item.getElementsByTagName('media:thumbnail')[0]
-//       .textContent as string;
-//     newsItems = newsItems.concat({ title, link, pubDate, thumbnail });
-//   }
-//   return newsItems;
-// };
-
-const parseHTML = (
-  data: string,
-  dateFormat: string,
-  mediaTag?: string | undefined,
-) => {
-  const xmlDoc = getXMLDoc(data);
-  const items = xmlDoc.getElementsByTagName('item');
-  let newsItems: Omit<NewsItem, 'name'>[] = [];
-  for (const item of items) {
-    // console.log(item, mediaTag);
-    const title = item.getElementsByTagName('title')[0]?.textContent as string;
-    if (!title) continue;
-
-    const link = item.getElementsByTagName('link')[0]?.textContent as string;
-    const pubDateRaw = item.getElementsByTagName('pubDate')[0]
-      ?.textContent as string;
-    const pubDate = parse(pubDateRaw, dateFormat, new Date());
-    const thumbnail = mediaTag
-      ? (item.getElementsByTagName(mediaTag)[0]?.getAttribute('url') as string)
-      : '';
-    newsItems = newsItems.concat({
-      title,
-      link,
-      pubDate,
-      thumbnail,
+function Home() {
+  const { data, refetch } = useQuery(['users'], async () => {
+    const querySnapshot = await getDocs(collection(db, 'users'));
+    return querySnapshot.docs.map((doc) => {
+      return {
+        id: doc.id,
+        ...doc.data(),
+      };
     });
-  }
-  return newsItems;
-};
+  });
+  const addDocItem = async () => {
+    try {
+      const docRef = await addDoc(collection(db, 'users'), {
+        first: 'Ada',
+        last: 'Lovelace',
+        born: 1815,
+      });
+      console.log('Document written with ID: ', docRef.id);
+      refetch();
+    } catch (e) {
+      console.error('Error adding document: ', e);
+    }
+  };
+  const deleteItem = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'users', id));
+      refetch();
+    } catch (e) {
+      console.error('Error deleting document: ', e);
+    }
+  };
 
-const SCRAPER_URL = 'https://smemo-remix-pwa.fly.dev/api/v1/get-page?url=';
-const fetcher = (url: string) =>
-  fetch(SCRAPER_URL + window.btoa(url)).then((res) => res.text());
-
-const parser = async (
-  source: {
-    url: string;
-    mediaTag?: string | undefined;
-    dateFormat: string;
-    name: string;
-  },
-  setNewsItems: React.Dispatch<React.SetStateAction<NewsItem[]>>,
-) => {
-  const data = await fetcher(source.url);
-  const items = parseHTML(data, source.dateFormat, source.mediaTag);
-  setNewsItems((prev) =>
-    prev
-      .filter((item) => item.name !== source.name)
-      .concat(items.map((item) => ({ ...item, name: source.name }))),
-  );
-  // return async () => {
-  //   const data = await fetcher(source.url);
-  //   const items = parseHTML(data, source.dateFormat, source.mediaTag);
-  //   setNewsItems((prev) =>
-  //     prev.concat(items.map((item) => ({ ...item, name: source.name }))),
-  //   );
-  // };
-};
-
-const shorten = (text: string, length: number) => {
-  return text.length > length ? text.substring(0, length) + '...' : text;
-};
-
-function SingleNewsItem({
-  single,
-  setSingle,
-}: {
-  single: NewsItem;
-  setSingle: any;
-}) {
-  const [html, set] = useState('');
-
-  useEffect(() => {
-    fetcher(single.link).then((data) => {
-      const domParser = new DOMParser();
-      const doc = domParser.parseFromString(data, 'text/html');
-      if (single.name === 'The Hindu') {
-        const content = doc.querySelector(
-          '.container.article-section ',
-        )?.innerHTML;
-        set(content || '');
-      }
-    });
-  }, [single.link, single.name]);
+  console.log(data);
 
   return (
     <div>
-      <Header isSingle={Boolean(single)} setSingle={setSingle} />
-      <div className="p-4">
-        {html && <div dangerouslySetInnerHTML={{ __html: html }}></div>}
+      <button className="btn" onClick={addDocItem}>
+        Add Doc
+      </button>
+      {data?.map((doc: any) => {
+        return (
+          <li key={doc.id}>
+            {doc?.first}&nbsp;&nbsp;
+            <button
+              onClick={() => {
+                deleteItem(doc.id);
+              }}
+            >
+              x
+            </button>
+          </li>
+        );
+      })}
+      <div className="btm-nav">
+        <button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
+          </svg>
+        </button>
+        <button className="active">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+        <button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   );
-}
-
-function Header({
-  isSingle,
-  setSingle,
-}: {
-  isSingle: boolean;
-  setSingle: any;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex w-full flex-row items-center py-4 px-4 shadow-sm"
-    >
-      {isSingle && (
-        <button onClick={() => setSingle(null)}>
-          <img
-            className="h-12 p-2"
-            src="arrow-back-outline.svg"
-            alt="back-btn"
-          />
-        </button>
-      )}
-      <img src="circle-icon.png" className="w-12" />
-    </motion.div>
-  );
-}
-
-function isValidDate(d: any) {
-  return d instanceof Date && !isNaN(d);
 }
 
 export default function App() {
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
-  const [single, setSingle] = useState<NewsItem | null>(null);
-
-  const fetchSomeData = useCallback(async () => {
-    const sources = [
-      {
-        url: 'https://marathi.abplive.com/entertainment/theatre/feed',
-        mediaTag: 'media:thumbnail',
-        dateFormat: 'EEE, dd MMM yyyy HH:mm:ss X',
-        name: 'ABP Live',
-      },
-      {
-        url: 'https://www.thehindu.com/opinion/editorial/feeder/default.rss',
-        mediaTag: 'media:content',
-        dateFormat: 'EEE, dd MMM yyyy HH:mm:ss X',
-        name: 'The Hindu',
-      },
-      {
-        url: 'https://www.thehindu.com/opinion/lead/feeder/default.rss',
-        mediaTag: 'media:content',
-        dateFormat: 'EEE, dd MMM yyyy HH:mm:ss X',
-        name: 'The Hindu',
-      },
-      {
-        url: 'https://www.thehindu.com/business/Economy/feeder/default.rss',
-        mediaTag: 'media:content',
-        dateFormat: 'EEE, dd MMM yyyy HH:mm:ss X',
-        name: 'The Hindu',
-      },
-      {
-        url: 'https://www.thehindu.com/entertainment/theatre/feeder/default.rss',
-        mediaTag: 'media:content',
-        dateFormat: 'EEE, dd MMM yyyy HH:mm:ss X',
-        name: 'The Hindu',
-      },
-      // {
-      //   url: 'https://www.thehindu.com/news/national/feeder/default.rss',
-      //   mediaTag: 'media:content',
-      //   dateFormat: 'EEE, dd MMM yyyy HH:mm:ss X',
-      //   name: 'The Hindu',
-      // },
-    ];
-
-    await Promise.all(sources.map((source) => parser(source, setNewsItems)));
-  }, []);
-
-  useEffect(() => {
-    fetchSomeData();
-  }, [fetchSomeData]);
-
-  newsItems.sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
-
-  if (single) {
-    return <SingleNewsItem single={single} setSingle={setSingle} />;
-  }
-
   return (
-    <div className="h-screen w-screen">
-      <Header isSingle={Boolean(single)} setSingle={setSingle} />
-      <div className="">
-        {newsItems.map((item) => {
-          return (
-            <motion.div
-              initial={{ opacity: 0, translateY: -25 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              // transition={{ duration: 0.5 }}
-              key={item.link}
-              // href={item.link}
-              className="block"
-              onClick={() => setSingle(item)}
-            >
-              <div className="flex flex-row items-center px-4 py-4">
-                <div className="w-3/4">
-                  <div className="pb-1 text-xs">{item.name}</div>
-                  <div className="flex-wrap break-words pb-2 pr-1 text-base font-semibold">
-                    {shorten(item.title, 89)}
-                  </div>
-                  <div className="text-sm" key={item.link}>
-                    {isValidDate(item.pubDate) &&
-                      format(item.pubDate, 'dd MMM yyyy')}
-                  </div>
-                </div>
-                <div className="h-full w-1/4 flex-1">
-                  <img
-                    src={item.thumbnail}
-                    className="h-full w-full rounded-sm shadow-sm"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <Home />
+    </QueryClientProvider>
   );
 }
