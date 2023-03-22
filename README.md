@@ -45,3 +45,52 @@ nodes.forEach(node => {
     console.log({img,link,title,pubDate})
 })
 ```
+
+
+TODOS
+- [ ] Upgrade the template | https://github.com/cpojer/vite-ts-react-tailwind-template
+- [ ] Add JWT auth
+- [ ] Dockerize and deploy with CI CD
+- [ ] Chat Client
+- [ ] Add PWA
+
+
+
+auth
+- login
+- logout
+- refresh token
+
+Chat subscriptions
+- onCommentAdded
+
+
+```
+eval `ssh-agent`
+ssh-add ~/.ssh/ajay_rsa
+cd /home/ajay/deployments/smemo-remix-pwa
+git pull
+
+
+cp tsconfig-trpc.json tsconfig.json
+pnpm build-trpc
+mv dist/main.js dist/main.cjs
+
+docker build -t trpc-ziro .
+docker run -p 3005:2022 --name trpc-server \
+    -e DATABASE_URL="file:./dev.db" \
+    -v $PWD/dev-prod.db:/app/prisma/dev.db \
+    trpc-ziro
+docker exec -it trpc-server bash
+
+docker run -p 3005:2022 --name trpc-server \
+    --restart always \
+    --net reverse-proxy \
+    -e DATABASE_URL="file:./dev.db" \
+    -e "TZ=Asia/Dubai" \
+    -e 'LETSENCRYPT_EMAIL=mail@ajaymore.in' \
+    -e 'LETSENCRYPT_HOST=ziro.lawst.me' \
+    -e 'VIRTUAL_HOST=ziro.lawst.me'
+    -v $PWD/dev-prod.db:/app/prisma/dev.db \
+    trpc-ziro
+```
