@@ -68,7 +68,7 @@ Chat subscriptions
 ```
 eval `ssh-agent`
 ssh-add ~/.ssh/ajay_rsa
-cd /home/ajay/deployments/smemo-remix-pwa
+cd /home/ajay/code/Ziro
 git pull
 
 
@@ -83,14 +83,14 @@ docker run -p 3005:2022 --name trpc-server \
     trpc-ziro
 docker exec -it trpc-server bash
 
-docker run -p 3005:2022 --name trpc-server \
+docker run -p 3005:2022 -d --name trpc-server \
     --restart always \
     --net reverse-proxy \
     -e DATABASE_URL="file:./dev.db" \
     -e "TZ=Asia/Dubai" \
     -e 'LETSENCRYPT_EMAIL=mail@ajaymore.in' \
     -e 'LETSENCRYPT_HOST=ziro.lawst.me' \
-    -e 'VIRTUAL_HOST=ziro.lawst.me'
-    -v $PWD/dev-prod.db:/app/prisma/dev.db \
-    trpc-ziro
+    -e 'VIRTUAL_HOST=ziro.lawst.me' \
+    -v $PWD/prod.db:/app/prisma/dev.db \
+    trpc-ziro:1
 ```
