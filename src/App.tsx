@@ -15,6 +15,10 @@ if (!wsUniqueId) {
   localStorage.setItem('wsUniqueId', wsUniqueId);
 }
 
+const isProd = import.meta.env.PROD;
+const httpUrl = isProd ? 'https://ziro.lawst.me' : 'http://localhost:2022';
+const wssUrl = isProd ? 'wss://ziro.lawst.me' : 'ws://localhost:2022';
+
 const trpcClient = trpc.createClient({
   links: [
     splitLink({
@@ -22,10 +26,10 @@ const trpcClient = trpc.createClient({
         return op.type === 'subscription';
       },
       true: wsLink({
-        client: createWSClient({ url: `ws://localhost:3005/${wsUniqueId}` }),
+        client: createWSClient({ url: `${wssUrl}/${wsUniqueId}` }),
       }),
       false: httpBatchLink({
-        url: 'http://localhost:3005',
+        url: httpUrl,
         headers() {
           return {
             authorization: `Bearer dsococosoeoeosos`,
@@ -42,7 +46,7 @@ function DataFetchComponent() {
   const mutation = trpc.post.createPost.useMutation({});
   trpc.post.randomNumber.useSubscription(undefined, {
     onData(post) {
-      console.log('subscription data:', post);
+      // console.log('subscription data:', post);
     },
     onError(err) {
       console.error('Subscription error:', err);
@@ -50,7 +54,7 @@ function DataFetchComponent() {
       utils.greeting.hello.invalidate();
     },
   });
-  console.log(hello.data);
+  console.log(import.meta.env.PROD);
 
   const addUser = () => {
     mutation.mutate({

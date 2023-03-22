@@ -76,7 +76,7 @@ cp tsconfig-trpc.json tsconfig.json
 pnpm build-trpc
 mv dist/main.js dist/main.cjs
 
-docker build -t trpc-ziro .
+docker build -t trpc-ziro:1 .
 docker run -p 3005:2022 --name trpc-server \
     -e DATABASE_URL="file:./dev.db" \
     -v $PWD/dev-prod.db:/app/prisma/dev.db \
