@@ -10,8 +10,15 @@ import {
 } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import cors from 'cors';
+import webPush from 'web-push';
 import { WebSocketServer } from 'ws';
 import { z } from 'zod';
+
+const PUBLIC_KEY =
+  'BICjG2K7ZNYsVMPqXHLmtBLyF51jNY-5ECNqsyV3-FO-7p3SNSCscCiLZ03uxchdOMS2r7RQi2x_mAVSKSPGeiU';
+const PRIVATE_KEY = 'yt01PnNKfKeoT-Q6q5CYn5_TzJyJnuBMhzkRmgRBtYs';
+
+webPush.setVapidDetails(`mailto:mail@ajaymore.in`, PUBLIC_KEY, PRIVATE_KEY);
 
 let prisma: PrismaClient;
 
@@ -24,6 +31,32 @@ if (process.env.NODE_ENV === 'production') {
   }
   prisma = $global.__db__;
 }
+
+const loggerMiddleware = {
+  async onRequest({ ctx, req }: any) {
+    const startTime = Date.now();
+    ctx.startTime = startTime;
+
+    console.log(
+      `[${new Date(startTime).toISOString()}] Incoming request:`,
+      req,
+    );
+
+    return undefined;
+  },
+
+  async onResponse({ ctx, req, res }: any) {
+    const endTime = Date.now();
+    const duration = endTime - ctx.startTime;
+
+    console.log(
+      `[${new Date(endTime).toISOString()}] Response (${duration}ms):`,
+      res,
+    );
+
+    return undefined;
+  },
+};
 
 // This is how you initialize a context for the server
 function createContext(
@@ -38,6 +71,8 @@ const t = initTRPC.context<Context>().create();
 
 const publicProcedure = t.procedure;
 const router = t.router;
+
+export const loggedProcedure = publicProcedure.use(loggerMiddleware as any);
 
 const greetingRouter = router({
   hello: publicProcedure
@@ -67,6 +102,18 @@ const postRouter = router({
           password,
         },
       });
+    }),
+  pushNotification: publicProcedure
+    .input(z.object({ sub: z.any() }))
+    .mutation(({ input: { sub } }) => {
+      console.log(typeof sub, sub);
+      return webPush.sendNotification(
+        sub,
+        JSON.stringify({
+          title: 'Hello Web Push',
+          message: 'Your web push notification is here!',
+        }),
+      );
     }),
   randomNumber: publicProcedure.subscription(() => {
     return observable<{ randomNumber: number }>((emit) => {

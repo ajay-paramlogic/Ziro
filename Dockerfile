@@ -1,5 +1,5 @@
 FROM node:16-bullseye-slim as base
-RUN apt-get update && apt-get install -y openssl
+RUN apt-get update && apt-get install -y openssl cron
 RUN npm i -g pnpm
 WORKDIR /app
 ADD package.json pnpm-lock.yaml ./
